@@ -1,9 +1,9 @@
 # rawdisk-ui
 
-### Building
+### Compiling qt templates:
 
-1. Install buildozer:
+    % pyuic5 -x designer/main_window.ui -o gui/generated/ui_main_window.py
 
-```bash
-$ pip install buildozer
-```
+    or
+
+    $ make
