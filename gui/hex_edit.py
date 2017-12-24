@@ -102,7 +102,7 @@ class HexEdit(QAbstractScrollArea):
         qp.setBrush(QColor(255, 255, 255))
 
         if self.__buffer:
-            remaining_rows = self.__buffer.remaining_bytes // self.__bytes_per_row
+            remaining_rows = math.ceil(self.__buffer.remaining_bytes / self.__bytes_per_row)
 
             for row in range(min(int(self.__rows_shown), remaining_rows)):
                 y_pos = (row + 1) * self.__font_metrics.height()
