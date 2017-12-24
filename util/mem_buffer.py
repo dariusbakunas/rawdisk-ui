@@ -2,6 +2,9 @@
 
 import os
 import mmap
+import logging
+
+logger = logging.getLogger(__name__)
 
 class MemBuffer():
     def __init__(self, filename, min_size):
@@ -75,14 +78,16 @@ class MemBuffer():
         if self.__mmap:
             self.__mmap.close()
 
-        self.__start_offset = max(self.__current_offset - self.__current_offset % mmap.ALLOCATIONGRANULARITY - mmap.ALLOCATIONGRANULARITY, 0)
+        adjusted_offset = self.__current_offset - self.__current_offset % mmap.ALLOCATIONGRANULARITY
 
-        self.__end_offset = min(
-            self.__current_offset + 2 * mmap.ALLOCATIONGRANULARITY,
-            self.__file_size)
+        # total window size is 4 * mmap.ALLOCATIONGRANULARITY
+        self.__start_offset = max(adjusted_offset - 4 * mmap.ALLOCATIONGRANULARITY, 0)
+        self.__end_offset = min(adjusted_offset + 4 * mmap.ALLOCATIONGRANULARITY, self.__file_size)
+
+        logger.debug('loading mmap - start: {}, end: {}'.format(self.start_offset, self.end_offset))
 
         self.__mmap = mmap.mmap(
             fileno=self.__file.fileno(),
-            length=self.__end_offset - self.__start_offset,
+            length=self.end_offset - self.start_offset,
             access=mmap.ACCESS_READ,
-            offset=self.__start_offset)
+            offset=self.start_offset)
