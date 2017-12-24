@@ -6,26 +6,21 @@ from PyQt5.QtWidgets import QAbstractScrollArea
 from PyQt5.QtGui import QPainter, QColor, QFontDatabase, \
     QFontMetrics
 
-
-CHUNK_SIZE = 1024
-
 class HexEdit(QAbstractScrollArea):
     def __init__(self, parent = None):
         super().__init__(parent)
         self.__buffer = None
-        self.__max_bytes = 2 * CHUNK_SIZE
         self.__rows_shown = 0
         self.__total_rows = 0
-        self.__file_size = 0
         self.__current_row = 0
         self.initUI()
 
     def initUI(self):
         self.setMinimumSize(1, 30)
-        fixed_font = QFontDatabase.systemFont(QFontDatabase.FixedFont)
+        font_db = QFontDatabase()
+        fixed_font = font_db.systemFont(QFontDatabase.FixedFont)
         fixed_font.setPointSize(12)
         self.setFont(fixed_font)
-        self.verticalScrollBar().setValue(0)
         self.verticalScrollBar().valueChanged.connect(self.updateScroll)
 
     def updateScroll(self, value):
@@ -41,7 +36,8 @@ class HexEdit(QAbstractScrollArea):
 
         if num_pixels_pt is not None:
             y_diff = num_pixels_pt.y()
-            row = self.__current_row - y_diff if y_diff < self.__current_row else 0
+            current_row = self.verticalScrollBar().value()
+            row = current_row - y_diff if y_diff < current_row else 0
             row = self.__total_rows if row > self.__total_rows else row
             self.verticalScrollBar().setValue(row)
 
@@ -62,6 +58,9 @@ class HexEdit(QAbstractScrollArea):
 
     def load(self, filename):
         self.__buffer = MemBuffer(filename, min_size=self.__rows_shown * self.__bytes_per_row)
+        self.__current_row = 0
+        self.verticalScrollBar().setValue(0)
+
         self.update_total_rows()
         self.viewport().update()
 
@@ -73,8 +72,6 @@ class HexEdit(QAbstractScrollArea):
         self.__total_rows = math.ceil(
             self.__buffer.size / self.__bytes_per_row)
 
-        self.__current_row = 0
-        self.verticalScrollBar().setValue(0)
         self.verticalScrollBar().setRange(0, self.__total_rows - self.__rows_shown)
         self.verticalScrollBar().setPageStep(self.__rows_shown)
 
@@ -96,6 +93,7 @@ class HexEdit(QAbstractScrollArea):
 
         if self.__buffer:
             self.__buffer.min_size = self.__rows_shown * self.__bytes_per_row
+            self.__buffer.offset = self.__current_row * self.__bytes_per_row
             self.update_total_rows()
 
     def resizeEvent(self, QResizeEvent):

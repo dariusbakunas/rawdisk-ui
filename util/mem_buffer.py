@@ -5,7 +5,6 @@ import mmap
 
 class MemBuffer():
     def __init__(self, filename, min_size):
-        print(mmap.ALLOCATIONGRANULARITY)
         self.__file_size = os.path.getsize(filename)
         self.__file = open(filename, 'rb')
         self.__start_offset = 0
