@@ -12,7 +12,11 @@
 
     or
 
-    $ make
+    % make ui
+
+### Building OSX app bundle:
+    
+    % make osx
 
 #### Resources
 
