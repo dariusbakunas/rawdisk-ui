@@ -8,6 +8,18 @@
 * Qt 5
 * Python 3
 
+### TODO:
+
+* Add address section
+* Add ascii section
+* Add cursor
+* Add ability to highlight sections
+* Use rawdisk library for fs detection
+
+### Install requirements:
+
+    % pip install -r requirements.txt
+
 ### Compiling qt templates:
 
     % pyuic5 -x designer/main_window.ui -o gui/generated/ui_main_window.py
