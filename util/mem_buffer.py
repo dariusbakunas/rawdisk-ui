@@ -49,6 +49,14 @@ class MemBuffer():
         self.__min_size = value
 
     @property
+    def start_offset(self):
+        return self.__start_offset
+
+    @property
+    def end_offset(self):
+        return self.__end_offset
+
+    @property
     def size(self):
         return self.__file_size
 

@@ -12,7 +12,6 @@ class HexEdit(QAbstractScrollArea):
         self.__buffer = None
         self.__rows_shown = 0
         self.__total_rows = 0
-        self.__current_row = 0
         self.initUI()
 
     def initUI(self):
@@ -25,7 +24,6 @@ class HexEdit(QAbstractScrollArea):
 
     def updateScroll(self, value):
         self.__buffer.offset = value * self.__bytes_per_row
-        self.__current_row = value
         self.viewport().update()
 
     def wheelEvent(self, event):
@@ -58,7 +56,6 @@ class HexEdit(QAbstractScrollArea):
 
     def load(self, filename):
         self.__buffer = MemBuffer(filename, min_size=self.__rows_shown * self.__bytes_per_row)
-        self.__current_row = 0
         self.verticalScrollBar().setValue(0)
 
         self.update_total_rows()
@@ -93,7 +90,8 @@ class HexEdit(QAbstractScrollArea):
 
         if self.__buffer:
             self.__buffer.min_size = self.__rows_shown * self.__bytes_per_row
-            self.__buffer.offset = self.__current_row * self.__bytes_per_row
+            offset = self.verticalScrollBar().value() * self.__bytes_per_row
+            self.__buffer.offset = self.__buffer.size if offset > self.__buffer.size else offset
             self.update_total_rows()
 
     def resizeEvent(self, QResizeEvent):
@@ -104,7 +102,7 @@ class HexEdit(QAbstractScrollArea):
         qp.setBrush(QColor(255, 255, 255))
 
         if self.__buffer:
-            remaining_rows = self.__buffer.remaining_bytes
+            remaining_rows = self.__buffer.remaining_bytes // self.__bytes_per_row
 
             for row in range(min(int(self.__rows_shown), remaining_rows)):
                 y_pos = (row + 1) * self.__font_metrics.height()
