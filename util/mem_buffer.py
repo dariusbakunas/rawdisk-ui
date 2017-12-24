@@ -19,7 +19,10 @@ class MemBuffer():
 
     def __getitem__(self, item):
         # adjust all offsets based on currently loaded mmap offset
-        adjusted_slice = slice(item.start - self.__start_offset, item.stop - self.__start_offset, item.step)
+        adjusted_slice = slice(
+            item.start - self.__start_offset,
+            item.stop - self.__start_offset,
+            item.step)
         return self.__mmap[adjusted_slice]
 
     def __len__(self):
@@ -84,7 +87,8 @@ class MemBuffer():
         self.__start_offset = max(adjusted_offset - 4 * mmap.ALLOCATIONGRANULARITY, 0)
         self.__end_offset = min(adjusted_offset + 4 * mmap.ALLOCATIONGRANULARITY, self.__file_size)
 
-        logger.debug('loading mmap - start: {}, end: {}'.format(self.start_offset, self.end_offset))
+        logger.debug('loading mmap - start: {}, end: {}, current offset: {}'
+                     .format(self.start_offset, self.end_offset, self.offset))
 
         self.__mmap = mmap.mmap(
             fileno=self.__file.fileno(),
