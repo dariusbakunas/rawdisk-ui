@@ -1,5 +1,7 @@
 # rawdisk-ui
 
+![Main Window](/docs/screens/screen01.png?raw=true "Main Window")
+
 ### Dependencies
 
 * PyQt5
@@ -16,7 +18,7 @@
 
 ### Building OSX app bundle:
     
-    % make osx
+    % make app
 
 #### Resources
 
