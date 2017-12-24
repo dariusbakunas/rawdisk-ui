@@ -1,8 +1,7 @@
 # coding=utf-8
 
 import math
-import mmap
-import os
+from util.mem_buffer import MemBuffer
 from PyQt5.QtWidgets import QAbstractScrollArea
 from PyQt5.QtGui import QPainter, QColor, QFontDatabase, \
     QFontMetrics
@@ -13,11 +12,12 @@ CHUNK_SIZE = 1024
 class HexEdit(QAbstractScrollArea):
     def __init__(self, parent = None):
         super().__init__(parent)
-        self.__mmap = None
-        self.__max_bytes = CHUNK_SIZE
+        self.__buffer = None
+        self.__max_bytes = 2 * CHUNK_SIZE
         self.__rows_shown = 0
+        self.__total_rows = 0
         self.__file_size = 0
-        self.__offset = 0
+        self.__current_row = 0
         self.initUI()
 
     def initUI(self):
@@ -26,6 +26,24 @@ class HexEdit(QAbstractScrollArea):
         fixed_font.setPointSize(12)
         self.setFont(fixed_font)
         self.verticalScrollBar().setValue(0)
+        self.verticalScrollBar().valueChanged.connect(self.updateScroll)
+
+    def updateScroll(self, value):
+        self.__buffer.offset = value * self.__bytes_per_row
+        self.__current_row = value
+        self.viewport().update()
+
+    def wheelEvent(self, event):
+        num_pixels_pt = event.pixelDelta()
+
+        # TODO: handle degrees if pixels not avail
+        num_degress = event.angleDelta() / 8
+
+        if num_pixels_pt is not None:
+            y_diff = num_pixels_pt.y()
+            row = self.__current_row - y_diff if y_diff < self.__current_row else 0
+            row = self.__total_rows if row > self.__total_rows else row
+            self.verticalScrollBar().setValue(row)
 
     def setFont(self, font):
         super().setFont(font)
@@ -34,32 +52,31 @@ class HexEdit(QAbstractScrollArea):
 
     def paintEvent(self, e):
         qp = QPainter(self.viewport())
-        qp.begin(self)
+        # qp.begin(self)
         self.drawWidget(qp)
-        qp.end()
+        # qp.end()
 
     def closeEvent(self, QCloseEvent):
-        if self.__mmap:
-            self.__mmap.close()
-            self.__file.close()
+        if self.__buffer:
+            self.__buffer.close()
 
     def load(self, filename):
-        self.__file_size = os.path.getsize(filename)
-        self.__file = open(filename, 'rb')
-
-        self.reload_mmap()
-
-    def reload_mmap(self):
-        if self.__mmap:
-            self.__mmap.close()
-
-        length = self.__max_bytes if self.__max_bytes < self.__file_size else self.__file_size
-        self.__mmap = mmap.mmap(
-            fileno=self.__file.fileno(),
-            length=length,
-            access=mmap.ACCESS_READ,
-            offset=self.__offset)
+        self.__buffer = MemBuffer(filename, min_size=self.__rows_shown * self.__bytes_per_row)
+        self.update_total_rows()
         self.viewport().update()
+
+    def set_offset(self, offset):
+        self.__buffer.offset = offset
+        self.viewport().update()
+
+    def update_total_rows(self):
+        self.__total_rows = math.ceil(
+            self.__buffer.size / self.__bytes_per_row)
+
+        self.__current_row = 0
+        self.verticalScrollBar().setValue(0)
+        self.verticalScrollBar().setRange(0, self.__total_rows - self.__rows_shown)
+        self.verticalScrollBar().setPageStep(self.__rows_shown)
 
     def get_bytes_per_row(self, font_metrics, row_width):
         char_width = font_metrics.width('B')
@@ -69,10 +86,6 @@ class HexEdit(QAbstractScrollArea):
         width = font_metrics.width('AA ' * num_bytes) - font_metrics.width(' ')
         return num_bytes - 1 if width > row_width else num_bytes
 
-    def get_max_bytes(self, total_rows, bytes_per_row):
-        total_bytes = total_rows * bytes_per_row
-        return math.ceil(total_bytes / CHUNK_SIZE) * CHUNK_SIZE
-
     def update_metrics(self):
         viewport_width = self.viewport().width()
         viewport_height = self.viewport().height()
@@ -80,14 +93,10 @@ class HexEdit(QAbstractScrollArea):
             font_metrics=self.__font_metrics,
             row_width=viewport_width)
         self.__rows_shown = viewport_height // self.__font_metrics.height()
-        max_bytes = self.get_max_bytes(
-            total_rows=self.__rows_shown,
-            bytes_per_row=self.__bytes_per_row)
 
-        if self.__max_bytes != max_bytes:
-            self.__max_bytes = max_bytes
-            self.reload_mmap()
-
+        if self.__buffer:
+            self.__buffer.min_size = self.__rows_shown * self.__bytes_per_row
+            self.update_total_rows()
 
     def resizeEvent(self, QResizeEvent):
         self.update_metrics()
@@ -96,10 +105,12 @@ class HexEdit(QAbstractScrollArea):
         qp.setPen(QColor(0, 0, 0))
         qp.setBrush(QColor(255, 255, 255))
 
-        if self.__mmap:
-            for row in range(int(self.__rows_shown)):
+        if self.__buffer:
+            remaining_rows = self.__buffer.remaining_bytes
+
+            for row in range(min(int(self.__rows_shown), remaining_rows)):
                 y_pos = (row + 1) * self.__font_metrics.height()
-                offset = row * self.__bytes_per_row
-                chunk = self.__mmap[offset:offset + self.__bytes_per_row]
-                str = ''.join('{:02x} '.format(x) for x in chunk)
+                offset = row * self.__bytes_per_row + self.__buffer.offset
+                row_bytes = self.__buffer[offset:offset + self.__bytes_per_row]
+                str = ''.join('{:02x} '.format(x) for x in row_bytes)
                 qp.drawText(0, y_pos, str)
