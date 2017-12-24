@@ -101,3 +101,5 @@ ENV/
 .mypy_cache/
 .buildozer/
 .idea/
+
+rawdisk-ui.app/

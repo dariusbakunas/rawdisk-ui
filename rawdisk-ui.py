@@ -13,4 +13,7 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow()
     window.show()
+    # deals with the PyQt specific problem in OS-X, that an application window
+    # is not automatically brought to the front on launch
+    window.raise_()
     sys.exit(app.exec_())
