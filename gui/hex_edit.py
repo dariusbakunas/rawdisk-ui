@@ -5,12 +5,15 @@ import logging
 import binascii
 from util.mem_buffer import MemBuffer
 from PyQt5.QtWidgets import QAbstractScrollArea
-from PyQt5.QtGui import QPainter, QColor, QFontDatabase, \
-    QFontMetrics
+from PyQt5.QtGui import QPainter, QColor, QFontDatabase, QFontMetrics
+from PyQt5.QtCore import pyqtSignal
 
 logger = logging.getLogger(__name__)
 
 class HexEdit(QAbstractScrollArea):
+    # signals
+    offset_changed = pyqtSignal(int, name='offsetChanged')
+
     def __init__(self, parent = None, addr_section = True):
         super().__init__(parent)
         self.__buffer = None
@@ -19,6 +22,7 @@ class HexEdit(QAbstractScrollArea):
         self.__addr_width = 0
         self.__ascii_width = 0
         self.__show_addr_section = addr_section
+
         self.initUI()
 
     def initUI(self):
@@ -30,7 +34,9 @@ class HexEdit(QAbstractScrollArea):
         self.verticalScrollBar().valueChanged.connect(self.updateScroll)
 
     def updateScroll(self, value):
-        self.__buffer.offset = value * self.__bytes_per_row
+        offset = value * self.__bytes_per_row
+        self.__buffer.offset = offset
+        self.offset_changed.emit(offset)
         self.viewport().update()
 
     def wheelEvent(self, event):
@@ -76,6 +82,7 @@ class HexEdit(QAbstractScrollArea):
 
     def set_offset(self, offset):
         self.__buffer.offset = offset
+        self.offset_changed.emit(offset)
         self.viewport().update()
 
     def update_total_rows(self):
@@ -107,7 +114,9 @@ class HexEdit(QAbstractScrollArea):
         if self.__buffer:
             self.__buffer.min_size = self.__rows_shown * self.__bytes_per_row
             offset = self.verticalScrollBar().value() * self.__bytes_per_row
-            self.__buffer.offset = self.__buffer.size if offset > self.__buffer.size else offset
+            offset = self.__buffer.size if offset > self.__buffer.size else offset
+            self.__buffer.offset = offset
+            self.offset_changed.emit(offset)
             self.update_total_rows()
 
     def resizeEvent(self, QResizeEvent):
