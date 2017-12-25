@@ -31,11 +31,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.statusbar.showMessage('Filename: {}, offset: {:X}'.format(self.filename, self.offset))
 
     def open(self):
+        formats = [
+            'All Disk Formats (*.bin *.img *.vhd)',
+            'Virtual Hard Disk (*.vhd)',
+            'Disk Image (*.img)',
+            'Binary File (*.bin)',
+            'All Files (*.*)',
+        ]
+
         self.filename, _ = QFileDialog.getOpenFileName(
             directory='/Users/darius/Programming/rawdisk/sample_images',
             parent=self,
             caption='Open Disk Image',
-            filter='All Supported Formats (*.bin *.img *.vhd);;Virtual Hard Disk (*.vhd);;Disk Image (*.img);;Binary File (*.bin)'
+            filter=';;'.join(formats)
         )
         if self.filename:
             self.hex_edit.load(self.filename)
