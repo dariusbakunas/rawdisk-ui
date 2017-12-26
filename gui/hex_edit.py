@@ -30,7 +30,7 @@ class HexEdit(QAbstractScrollArea):
         self.initUI()
 
     def initUI(self):
-        self.setMinimumSize(1, 30)
+        self.setMinimumSize(300, 400)
         font_db = QFontDatabase()
         fixed_font = font_db.systemFont(QFontDatabase.FixedFont)
         fixed_font.setPointSize(12)
