@@ -1,6 +1,6 @@
 # rawdisk-ui
 
-![Main Window](/docs/screens/screen01.png?raw=true "Main Window")
+![Main Window](/docs/screens/screen02.png?raw=true "Main Window")
 
 ### Dependencies
 
