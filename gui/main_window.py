@@ -1,10 +1,5 @@
-import logging
-import binascii
-import mmap
-from PyQt5.QtWidgets import QMainWindow, QFileDialog, QListWidgetItem, QDesktopWidget
+from PyQt5.QtWidgets import QMainWindow, QFileDialog, QDesktopWidget
 from gui.generated.ui_main_window import Ui_MainWindow
-from gui.logger_console import LoggerConsole
-from rawdisk.session import Session
 from gui.hex_edit import HexEdit
 
 class MainWindow(QMainWindow, Ui_MainWindow):

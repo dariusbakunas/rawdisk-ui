@@ -2,7 +2,6 @@
 
 import math
 import logging
-import binascii
 from util.mem_buffer import MemBuffer
 from PyQt5.QtWidgets import QAbstractScrollArea
 from PyQt5.QtGui import QPainter, QColor, QFontDatabase, QFontMetrics
