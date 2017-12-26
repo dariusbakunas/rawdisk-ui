@@ -100,9 +100,9 @@ class HexEdit(QAbstractScrollArea):
 
         if ascii_section:
             #num_bytes = int((row_width - 2 * char_width) / (4 * char_width))
-            num_bytes = math.floor(((row_width / char_width) - 3) / 4)
+            num_bytes = math.floor(((row_width / char_width) - 4) / 4)
             width = font_metrics.width('AA ' * num_bytes) + font_metrics.width(
-                'A' * num_bytes) + font_metrics.width('SSS')
+                'A' * num_bytes) + font_metrics.width('SS')
         else:
             num_bytes = int((row_width / char_width) / 3)
             width = font_metrics.width('AA ' * num_bytes) + font_metrics.width(
