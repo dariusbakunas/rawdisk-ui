@@ -8,7 +8,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Ui_MainWindow.__init__(self)
         self.setupUi(self)
 
-        self.hex_edit = HexEdit(self.centralwidget, addr_section=True)
+        self.hex_edit = HexEdit(self.centralwidget, addr_section=True, ascii_section=True)
         self.hex_edit.setObjectName("hexEdit")
         self.gridLayout.addWidget(self.hex_edit, 1, 0, 1, 1)
         self.center()
