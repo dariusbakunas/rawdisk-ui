@@ -18,10 +18,14 @@ class HexEdit(QAbstractScrollArea):
         self.__buffer = None
         self.__rows_shown = 0
         self.__total_rows = 0
-        self.__addr_width = 0
+        self.__addr_width = 100
         self.__ascii_width = 0
         self.__show_addr_section = addr_section
         self.__show_ascii_section = ascii_section
+
+        self.__addr_bg_color = QColor(188, 188, 188)
+        self.__addr_fg_color = QColor(75, 75, 75)
+        self.__main_fg_color = QColor(0, 0, 0)
 
         self.initUI()
 
@@ -35,9 +39,7 @@ class HexEdit(QAbstractScrollArea):
 
     def updateScroll(self, value):
         offset = value * self.__bytes_per_row
-        self.__buffer.offset = offset
-        self.offset_changed.emit(offset)
-        self.viewport().update()
+        self.set_offset(offset)
 
     def wheelEvent(self, event):
         num_pixels_pt = event.pixelDelta()
@@ -74,7 +76,7 @@ class HexEdit(QAbstractScrollArea):
 
         if self.__show_addr_section:
             self.__addr_width = self.__font_metrics.width(
-                ' {:X}  '.format(self.__buffer.size))
+                ' {:X} '.format(self.__buffer.size))
 
         self.verticalScrollBar().setValue(0)
         self.update_metrics()
@@ -97,13 +99,14 @@ class HexEdit(QAbstractScrollArea):
         char_width = font_metrics.width('B')
 
         if ascii_section:
-            num_bytes = int((row_width - 2 * char_width) / (4 * char_width))
+            #num_bytes = int((row_width - 2 * char_width) / (4 * char_width))
+            num_bytes = math.floor(((row_width / char_width) - 3) / 4)
             width = font_metrics.width('AA ' * num_bytes) + font_metrics.width(
-                'A' * num_bytes) + font_metrics.width('  ')
+                'A' * num_bytes) + font_metrics.width('SSS')
         else:
             num_bytes = int((row_width / char_width) / 3)
             width = font_metrics.width('AA ' * num_bytes) + font_metrics.width(
-                'A' * num_bytes) + font_metrics.width('  ')
+                'A' * num_bytes) + font_metrics.width('SS')
 
         return num_bytes - 1 if width > row_width else num_bytes
 
@@ -137,17 +140,30 @@ class HexEdit(QAbstractScrollArea):
 
     def render_ascii_line(self, x, y, painter, bytes):
         ascii_str = ''.join([self.decode_byte(x) for x in bytes])
-        painter.drawText(x, y,' {} '.format(ascii_str))
+        painter.drawText(x, y, '{} '.format(ascii_str))
 
     def render_addr_line(self, x, y, painter, address, padding):
+        painter.setPen(self.__addr_fg_color)
         addr_str = '{:X}'.format(address)
         painter.drawText(x, y, ' ' + addr_str.rjust(padding, '0'))
 
     def render_byte_line(self, x, y, painter, bytes):
-        bytes_str = ''.join('{:02X} '.format(x) for x in bytes)
-        painter.drawText(x, y, bytes_str)
+        painter.setPen(self.__main_fg_color)
+        bytes_str = ' '.join('{:02X}'.format(x) for x in bytes)
+        painter.drawText(x, y, ' ' + bytes_str + ' ')
+
+    def render_addr_section(self, width, height, painter):
+        painter.setBrush(self.__addr_bg_color)
+        painter.setPen(self.__addr_bg_color)
+        painter.drawRect(0, 0, width, height)
 
     def drawWidget(self, qp):
+        self.render_addr_section(
+            width=self.__addr_width if self.__show_addr_section else 100,
+            height=self.viewport().height(),
+            painter=qp
+        )
+
         qp.setPen(QColor(0, 0, 0))
         qp.setBrush(QColor(255, 255, 255))
 
@@ -177,7 +193,7 @@ class HexEdit(QAbstractScrollArea):
                     bytes=row_bytes)
 
                 if self.__show_ascii_section:
-                    bytes_width = self.__font_metrics.width('AAA' * self.__bytes_per_row)
+                    bytes_width = self.__font_metrics.width(' ' + 'AAA' * self.__bytes_per_row + ' ')
                     self.render_ascii_line(
                         x=bytes_x + bytes_width,
                         y=row_y,
