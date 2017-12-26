@@ -13,7 +13,7 @@ class HexEdit(QAbstractScrollArea):
     # signals
     offset_changed = pyqtSignal(int, name='offsetChanged')
 
-    def __init__(self, parent = None, addr_section = True):
+    def __init__(self, parent = None, addr_section = True, ascii_section = True):
         super().__init__(parent)
         self.__buffer = None
         self.__rows_shown = 0
@@ -21,6 +21,7 @@ class HexEdit(QAbstractScrollArea):
         self.__addr_width = 0
         self.__ascii_width = 0
         self.__show_addr_section = addr_section
+        self.__show_ascii_section = ascii_section
 
         self.initUI()
 
@@ -91,15 +92,19 @@ class HexEdit(QAbstractScrollArea):
         self.verticalScrollBar().setRange(0, self.__total_rows - self.__rows_shown)
         self.verticalScrollBar().setPageStep(self.__rows_shown)
 
-    def get_bytes_per_row(self, font_metrics, row_width):
+    def get_bytes_per_row(self, font_metrics, row_width, ascii_section=True):
+        """Return number of bytes that can fit in one row, including ascii section"""
         char_width = font_metrics.width('B')
-        # num_bytes = int((row_width / char_width) / 3)
-        num_bytes = int((row_width - 2 * char_width) / (4 * char_width))
 
-        # calculate width if we print that many bytes and adjust if necessary
-        #width = font_metrics.width('AA ' * num_bytes) - font_metrics.width(' ')
+        if ascii_section:
+            num_bytes = int((row_width - 2 * char_width) / (4 * char_width))
+            width = font_metrics.width('AA ' * num_bytes) + font_metrics.width(
+                'A' * num_bytes) + font_metrics.width('  ')
+        else:
+            num_bytes = int((row_width / char_width) / 3)
+            width = font_metrics.width('AA ' * num_bytes) + font_metrics.width(
+                'A' * num_bytes) + font_metrics.width('  ')
 
-        width = font_metrics.width('AA ' * num_bytes) + font_metrics.width('A' * num_bytes) + font_metrics.width('  ')
         return num_bytes - 1 if width > row_width else num_bytes
 
     def update_metrics(self):
@@ -107,7 +112,9 @@ class HexEdit(QAbstractScrollArea):
         viewport_height = self.viewport().height()
         self.__bytes_per_row = self.get_bytes_per_row(
             font_metrics=self.__font_metrics,
-            row_width=viewport_width - self.__addr_width)
+            row_width=viewport_width - self.__addr_width,
+            ascii_section=self.__show_ascii_section
+        )
         self.__rows_shown = viewport_height // self.__font_metrics.height()
 
         if self.__buffer:
@@ -128,6 +135,18 @@ class HexEdit(QAbstractScrollArea):
         else:
             return '.'
 
+    def render_ascii_line(self, x, y, painter, bytes):
+        ascii_str = ''.join([self.decode_byte(x) for x in bytes])
+        painter.drawText(x, y,' {} '.format(ascii_str))
+
+    def render_addr_line(self, x, y, painter, address, padding):
+        addr_str = '{:X}'.format(address)
+        painter.drawText(x, y, ' ' + addr_str.rjust(padding, '0'))
+
+    def render_byte_line(self, x, y, painter, bytes):
+        bytes_str = ''.join('{:02X} '.format(x) for x in bytes)
+        painter.drawText(x, y, bytes_str)
+
     def drawWidget(self, qp):
         qp.setPen(QColor(0, 0, 0))
         qp.setBrush(QColor(255, 255, 255))
@@ -136,22 +155,31 @@ class HexEdit(QAbstractScrollArea):
             remaining_rows = math.ceil(self.__buffer.remaining_bytes / self.__bytes_per_row)
             addr_padding = len('{:X}'.format(self.__buffer.size))
 
-            for row in range(min(int(self.__rows_shown), remaining_rows)):
-                y_pos = (row + 1) * self.__font_metrics.height()
+            for row in range(min(self.__rows_shown, remaining_rows)):
+                row_y = (row + 1) * self.__font_metrics.height()
                 offset = row * self.__bytes_per_row + self.__buffer.offset
                 row_bytes = self.__buffer[offset:offset + self.__bytes_per_row]
 
-                byte_padding = self.__bytes_per_row - len(row_bytes)
-
                 if self.__show_addr_section:
-                    addr_str = '{:X}'.format(offset)
-                    qp.drawText(0, y_pos, ' ' + addr_str.rjust(addr_padding, '0'))
+                    self.render_addr_line(
+                        x=0,
+                        y=row_y,
+                        painter=qp,
+                        address=offset,
+                        padding=addr_padding)
 
-                bytes_str = ''.join('{:02X} '.format(x) for x in row_bytes)
-                bytes_str += '   ' * byte_padding
-                qp.drawText(self.__addr_width, y_pos, bytes_str)
+                bytes_x = self.__addr_width if self.__show_addr_section else 0
 
-                row_bytes_width = self.__font_metrics.width(bytes_str)
+                self.render_byte_line(
+                    x=bytes_x,
+                    y=row_y,
+                    painter=qp,
+                    bytes=row_bytes)
 
-                ascii_str = ''.join([self.decode_byte(x) for x in row_bytes])
-                qp.drawText(self.__addr_width + row_bytes_width, y_pos, ' {} '.format(ascii_str))
+                if self.__show_ascii_section:
+                    bytes_width = self.__font_metrics.width('AAA' * self.__bytes_per_row)
+                    self.render_ascii_line(
+                        x=bytes_x + bytes_width,
+                        y=row_y,
+                        painter=qp,
+                        bytes=row_bytes)
