@@ -18,7 +18,7 @@ class HexEdit(QAbstractScrollArea):
         self.__buffer = None
         self.__rows_shown = 0
         self.__total_rows = 0
-        self.__addr_width = 100
+        self.__addr_width = 0
         self.__ascii_width = 0
         self.__show_addr_section = addr_section
         self.__show_ascii_section = ascii_section
@@ -61,9 +61,7 @@ class HexEdit(QAbstractScrollArea):
 
     def paintEvent(self, e):
         qp = QPainter(self.viewport())
-        # qp.begin(self)
         self.drawWidget(qp)
-        # qp.end()
 
     def closeEvent(self, QCloseEvent):
         if self.__buffer:
@@ -116,6 +114,12 @@ class HexEdit(QAbstractScrollArea):
             row_width=viewport_width - self.__addr_width,
             ascii_section=self.__show_ascii_section
         )
+
+
+        if self.__bytes_per_row <= 0:
+            # TODO: handle this
+            return
+
         self.__rows_shown = viewport_height // self.__font_metrics.height()
 
         if self.__buffer:

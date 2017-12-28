@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QFileDialog, QDesktopWidget
+from PyQt5.QtWidgets import QMainWindow, QFileDialog, QDesktopWidget, QMenuBar
 from gui.generated.ui_main_window import Ui_MainWindow
 from gui.hex_edit import HexEdit
 
@@ -7,16 +7,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         QMainWindow.__init__(self)
         Ui_MainWindow.__init__(self)
         self.setupUi(self)
-
-        self.hex_edit = HexEdit(self.centralwidget, addr_section=True, ascii_section=True)
-        self.hex_edit.setObjectName("hexEdit")
-        self.gridLayout.addWidget(self.hex_edit, 1, 0, 1, 1)
         self.center()
         self.actionOpen.triggered.connect(self.open)
-        self.hex_edit.offset_changed.connect(self.update_offset)
-
-        self.offset = 0
-        self.filename = None
+        self.tabs.tabCloseRequested.connect(self.remove_tab)
 
     def update_offset(self, offset):
         self.offset = offset
@@ -34,16 +27,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             'All Files (*.*)',
         ]
 
-        self.filename, _ = QFileDialog.getOpenFileName(
+        filename, _ = QFileDialog.getOpenFileName(
             directory='/Users/darius/Programming/rawdisk/sample_images',
             parent=self,
             caption='Open Disk Image',
             filter=';;'.join(formats)
         )
-        if self.filename:
-            self.hex_edit.load(self.filename)
 
-        self.update_status_bar()
+        if filename:
+            tab = HexEdit(self.tabs, addr_section=True, ascii_section=True)
+            tab.load(filename)
+            self.tabs.addTab(tab, filename)
+
+    def remove_tab(self, index):
+        widget = self.tabs.widget(index)
+        if widget is not None:
+            widget.deleteLater()
+        self.tabs.removeTab(index)
 
     def center(self):
         qr = self.frameGeometry()
