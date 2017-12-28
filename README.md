@@ -10,11 +10,14 @@
 
 ### TODO:
 
-* Add address section
-* Add ascii section
 * Add cursor
 * Add ability to highlight sections
 * Use rawdisk library for fs detection
+
+### Issues
+
+* In OSX Sierra native tab bar is added at the top of the window ([issue link](https://bugreports.qt.io/browse/QTBUG-61707))
+* Related to issue above, menu can only be activated if app is re-focused 
 
 ### Install requirements:
 
