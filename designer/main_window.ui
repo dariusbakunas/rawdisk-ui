@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>Rawdisk UI</string>
   </property>
+  <property name="documentMode">
+   <bool>false</bool>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
     <property name="leftMargin">
@@ -29,6 +32,9 @@
     </property>
     <item row="0" column="0">
      <widget class="QTabWidget" name="tabs">
+      <property name="elideMode">
+       <enum>Qt::ElideLeft</enum>
+      </property>
       <property name="usesScrollButtons">
        <bool>true</bool>
       </property>
@@ -63,7 +69,14 @@
     </property>
     <addaction name="actionOpen"/>
    </widget>
+   <widget class="QMenu" name="menu_View">
+    <property name="title">
+     <string>&amp;View</string>
+    </property>
+    <addaction name="actionASCII_Column"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menu_View"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionOpen">
@@ -72,6 +85,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionASCII_Column">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>ASCII Column</string>
    </property>
   </action>
  </widget>

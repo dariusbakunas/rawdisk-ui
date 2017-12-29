@@ -9,6 +9,7 @@ from PyQt5.QtCore import pyqtSignal
 
 logger = logging.getLogger(__name__)
 
+
 class HexEdit(QAbstractScrollArea):
     # signals
     offset_changed = pyqtSignal(int, name='offsetChanged')
@@ -16,6 +17,8 @@ class HexEdit(QAbstractScrollArea):
     def __init__(self, parent = None, addr_section = True, ascii_section = True):
         super().__init__(parent)
         self.__buffer = None
+        self.__font_metrics = None
+        self.__bytes_per_row = None
         self.__rows_shown = 0
         self.__total_rows = 0
         self.__addr_width = 0
@@ -27,17 +30,17 @@ class HexEdit(QAbstractScrollArea):
         self.__addr_fg_color = QColor(75, 75, 75)
         self.__main_fg_color = QColor(0, 0, 0)
 
-        self.initUI()
+        self.init_ui()
 
-    def initUI(self):
+    def init_ui(self):
         self.setMinimumSize(300, 400)
         font_db = QFontDatabase()
         fixed_font = font_db.systemFont(QFontDatabase.FixedFont)
         fixed_font.setPointSize(12)
-        self.setFont(fixed_font)
-        self.verticalScrollBar().valueChanged.connect(self.updateScroll)
+        self.set_font(fixed_font)
+        self.verticalScrollBar().valueChanged.connect(self.update_scroll)
 
-    def updateScroll(self, value):
+    def update_scroll(self, value):
         offset = value * self.__bytes_per_row
         self.set_offset(offset)
 
@@ -54,7 +57,7 @@ class HexEdit(QAbstractScrollArea):
             row = self.__total_rows if row > self.__total_rows else row
             self.verticalScrollBar().setValue(row)
 
-    def setFont(self, font):
+    def set_font(self, font):
         super().setFont(font)
         self.__font_metrics = QFontMetrics(font)
         self.update_metrics()
@@ -63,7 +66,7 @@ class HexEdit(QAbstractScrollArea):
         qp = QPainter(self.viewport())
         self.drawWidget(qp)
 
-    def closeEvent(self, QCloseEvent):
+    def closeEvent(self, close_event):
         if self.__buffer:
             self.__buffer.close()
 
@@ -115,7 +118,6 @@ class HexEdit(QAbstractScrollArea):
             ascii_section=self.__show_ascii_section
         )
 
-
         if self.__bytes_per_row <= 0:
             # TODO: handle this
             return
@@ -135,7 +137,7 @@ class HexEdit(QAbstractScrollArea):
 
     def decode_byte(self, byte):
         x = int.from_bytes([byte], byteorder='big')
-        if (x > 32 and x < 126):
+        if 32 < x < 126:
             return chr(x)
         else:
             return '.'
