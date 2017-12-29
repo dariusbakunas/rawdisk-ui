@@ -6,6 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class MemBuffer():
     def __init__(self, filename, min_size):
         self.__file_size = os.path.getsize(filename)
@@ -36,11 +37,11 @@ class MemBuffer():
     def offset(self, value):
         self.__current_offset = value
 
-        if (self.need_reload()):
+        if self.need_reload():
             self.load_mmap()
 
     def need_reload(self):
-        if (self.__end_offset == self.__file_size and self.__start_offset == 0):
+        if self.__end_offset == self.__file_size and self.__start_offset == 0:
             return False
 
         return (self.__end_offset - self.__current_offset <= self.__min_size) or \
