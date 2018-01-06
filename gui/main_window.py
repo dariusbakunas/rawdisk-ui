@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QMainWindow, QFileDialog, QDesktopWidget, QMenuBar
 from gui.generated.ui_main_window import Ui_MainWindow
 from gui.hex_edit import HexEdit
 
+
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
@@ -10,10 +11,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.center()
         self.actionOpen.triggered.connect(self.open)
         self.tabs.tabCloseRequested.connect(self.remove_tab)
-
-    def update_offset(self, offset):
-        self.offset = offset
-        self.update_status_bar()
 
     def update_status_bar(self):
         self.statusbar.showMessage('Filename: {}, offset: {:X}'.format(self.filename, self.offset))
