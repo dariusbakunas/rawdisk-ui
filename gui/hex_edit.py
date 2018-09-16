@@ -5,7 +5,7 @@ import logging
 from util.mem_buffer import MemBuffer
 from PyQt5.QtWidgets import QAbstractScrollArea
 from PyQt5.QtGui import QPainter, QColor, QFontDatabase, QFontMetrics
-from PyQt5.QtCore import pyqtSignal, Qt, QPoint
+from PyQt5.QtCore import pyqtSignal, Qt, QPoint, QTimer
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +36,10 @@ class HexEdit(QAbstractScrollArea):
 
         self.init_ui()
 
-        print(self.fontMetrics().width('AA ' * 15))
-        print(self.fontMetrics().boundingRect('AA ' * 15).width())
-        print(self.fontMetrics().boundingRect('AA ').width() * 15)
+        # self.__cursorTimer = QTimer()
+        # self.__cursorTimer.timeout.connect(self.updateCursor)
+        # self.__cursorTimer.setInterval(500)
+        # self.__cursorTimer.start()
 
     def init_ui(self):
         self.setContentsMargins(0, 0, 0, 0)
@@ -148,6 +149,16 @@ class HexEdit(QAbstractScrollArea):
         return offset if offset < self.__buffer.size else self.__buffer.size - 1
 
     def update_cursor(self, pos):
+        x_offset = self.__addr_width if self.__show_addr_section else 0
+
+        if pos.x() < x_offset:
+            # we're in addr section
+            return
+
+        if pos.x() > x_offset + self.__data_row_width:
+            # we're in ascii section
+            return
+
         offset = self.pos_to_offset(pos)
         self.__cursor_offset = offset
         self.__cursor_row = self.verticalScrollBar().value()
@@ -155,7 +166,7 @@ class HexEdit(QAbstractScrollArea):
 
     def draw_cursor(self, qp):
         pos = self.offset_to_pos(self.__cursor_offset)
-        qp.drawLine(pos.x(), pos.y(), pos.x(), pos.y() + self.fontMetrics().height())
+        qp.drawLine(pos.x(), pos.y() + self.fontMetrics().descent(), pos.x(), pos.y() + self.fontMetrics().height())
 
     def render_ascii_line(self, x, y, painter, bytes):
         ascii_str = ''.join([self.decode_byte(x) for x in bytes])
